@@ -41,6 +41,9 @@ setup(
     include_package_data=True,
     python_requires='>=3.3',
     entry_points={
+        'console_scripts': [
+            'dnsinq = dnsinq.cli:main',
+        ]
     },
     test_suite="dnsinq.tests.make_suite",
 )
