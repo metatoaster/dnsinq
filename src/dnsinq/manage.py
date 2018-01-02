@@ -33,15 +33,22 @@ def load_remote_domains_set(url):
     return domains_from_stream(stream)
 
 
-def append_new_dnsmasq_nxdomains_set(domains, path=DNSMASQ_NXDOMAIN_CONF):
+def append_new_dnsmasq_nxdomains_set(
+        domains, path=DNSMASQ_NXDOMAIN_CONF, comment=None):
     existing = load_local_domains_set(path)
     logger.info("found %d existing domains in '%s'", len(existing), path)
     new_domains = sorted(domains - existing)
+    if not new_domains:
+        logger.info('no new domains to be added')
+        return
     logger.info(
         "%d out of %d domains are to be newly added",
         len(new_domains), len(domains),
     )
     with open(path, 'a') as stream:
+        if comment:
+            for c in comment.splitlines():
+                stream.write('# ' + c + '\n')
         for domain in generate_nxdomain_conf(new_domains):
             stream.write(domain)
 

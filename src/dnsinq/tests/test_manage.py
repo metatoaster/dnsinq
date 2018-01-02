@@ -43,6 +43,31 @@ class ManageTestCase(unittest.TestCase):
                     'server=/banned.example/\n'
                     'server=/banned.test/\n', fd.read())
 
+    def test_append_existing_commented(self):
+        with tempfile.TemporaryDirectory() as workdir:
+            target = join(workdir, 'nxdomain.conf')
+            with open(target, 'w') as fd:
+                fd.write('server=/example.test/\n')
+                fd.write('server=/example.com/\n')
+
+            append_new_dnsmasq_nxdomains_set(
+                {'example.test'}, target)
+            with open(target) as fd:
+                self.assertEqual(
+                    'server=/example.test/\n'
+                    'server=/example.com/\n', fd.read())
+
+            append_new_dnsmasq_nxdomains_set(
+                {'banned.test', 'banned.example'}, target, comment='foo\nbar')
+            with open(target) as fd:
+                self.assertEqual(
+                    'server=/example.test/\n'
+                    'server=/example.com/\n'
+                    '# foo\n'
+                    '# bar\n'
+                    'server=/banned.example/\n'
+                    'server=/banned.test/\n', fd.read())
+
     def test_fetch_domains_from(self):
         with tempfile.TemporaryDirectory() as workdir:
             simple_list = join(workdir, 'simple.txt')
