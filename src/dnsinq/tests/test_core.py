@@ -20,6 +20,13 @@ ETC_HOSTS = """
 0.0.0.0    example.com # with a comment
 """
 
+DNSMASQ_NXDOMAIN = """
+server=/example.com/
+server=/null.example/
+server=/bad.example/
+server=/blocked.test/
+"""
+
 
 class CoreTestCase(unittest.TestCase):
 
@@ -41,7 +48,7 @@ class CoreTestCase(unittest.TestCase):
             'example.com',
             'localhost.local',
             'null.example',
-        ], domains)
+        ], sorted(domains))
 
     def test_get_domains_etchosts(self):
         domains = core.get_domains(
@@ -50,7 +57,19 @@ class CoreTestCase(unittest.TestCase):
             'example.com',
             'localhost.local',
             'null.example',
-        ], domains)
+        ], sorted(domains))
+
+    def test_get_domains_dnsmasq_nxdomain(self):
+        domains = core.get_domains(
+            core.iter_str(DNSMASQ_NXDOMAIN),
+            filter_=core.dnsmasqnxdomain_to_host,
+        )
+        self.assertEqual([
+            'bad.example',
+            'blocked.test',
+            'example.com',
+            'null.example',
+        ], sorted(domains))
 
     def test_get_domains_etchosts_stream(self):
         domains = core.get_domains(
@@ -61,10 +80,19 @@ class CoreTestCase(unittest.TestCase):
             'example.com',
             'localhost.local',
             'null.example',
-        ], domains)
+        ], sorted(domains))
 
     def test_detect_filter(self):
         self.assertIsNone(core.detect_filter(core.iter_str(SIMPLE_LIST)))
         self.assertEqual(
             core.etchostsline_to_host,
             core.detect_filter(core.iter_str(ETC_HOSTS)))
+
+    def test_generate_nxdomain_conf(self):
+        domains = [
+            'example.com',
+            'local.test',
+        ]
+        generator = core.generate_nxdomain_conf(domains)
+        self.assertEqual('server=/example.com/\n', next(generator))
+        self.assertEqual('server=/local.test/\n', next(generator))
