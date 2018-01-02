@@ -24,7 +24,7 @@ def iter_stream(stream):
     for line in stream:
         if line.startswith('#'):
             continue
-        yield line
+        yield line.strip()
 
 
 def etchostsline_to_host(s):
@@ -64,3 +64,15 @@ def detect_filter(strs):
 def generate_nxdomain_conf(hosts):
     for host in hosts:
         yield 'server=/' + host + '/\n'
+
+
+def domains_from_stream(stream):
+    """
+    Take a stream object, attempt to detect the filter needed and grab
+    the domains
+    """
+
+    stream.seek(0)
+    filter_ = detect_filter(iter_stream(stream))
+    stream.seek(0)
+    return get_domains(iter_stream(stream), filter_=filter_)

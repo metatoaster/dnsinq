@@ -9,6 +9,7 @@ localhost.local
 null.example
 # some additional comment
 example.com
+test.example.com
 """
 
 ETC_HOSTS = """
@@ -18,13 +19,14 @@ ETC_HOSTS = """
 0.0.0.0    null.example
 0.0.0.0    # some invalid line
 0.0.0.0    example.com # with a comment
+0.0.0.0    some.blocked.test # with a comment
 """
 
 DNSMASQ_NXDOMAIN = """
 server=/example.com/
 server=/null.example/
 server=/bad.example/
-server=/blocked.test/
+server=/some.blocked.test/
 """
 
 
@@ -48,6 +50,7 @@ class CoreTestCase(unittest.TestCase):
             'example.com',
             'localhost.local',
             'null.example',
+            'test.example.com',
         ], sorted(domains))
 
     def test_get_domains_etchosts(self):
@@ -57,6 +60,7 @@ class CoreTestCase(unittest.TestCase):
             'example.com',
             'localhost.local',
             'null.example',
+            'some.blocked.test',
         ], sorted(domains))
 
     def test_get_domains_dnsmasq_nxdomain(self):
@@ -66,9 +70,9 @@ class CoreTestCase(unittest.TestCase):
         )
         self.assertEqual([
             'bad.example',
-            'blocked.test',
             'example.com',
             'null.example',
+            'some.blocked.test',
         ], sorted(domains))
 
     def test_get_domains_etchosts_stream(self):
@@ -80,6 +84,7 @@ class CoreTestCase(unittest.TestCase):
             'example.com',
             'localhost.local',
             'null.example',
+            'some.blocked.test',
         ], sorted(domains))
 
     def test_detect_filter(self):
@@ -96,3 +101,9 @@ class CoreTestCase(unittest.TestCase):
         generator = core.generate_nxdomain_conf(domains)
         self.assertEqual('server=/example.com/\n', next(generator))
         self.assertEqual('server=/local.test/\n', next(generator))
+
+    def test_domains_from_stream(self):
+        for lists in [SIMPLE_LIST, ETC_HOSTS, DNSMASQ_NXDOMAIN]:
+            result = core.domains_from_stream(io.StringIO(lists))
+            self.assertEqual(4, len(result))
+            self.assertIn('example.com', result)
