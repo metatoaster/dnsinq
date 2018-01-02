@@ -36,6 +36,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'setuptools',
+        'requests',
     ],
     include_package_data=True,
     python_requires='>=3.3',
